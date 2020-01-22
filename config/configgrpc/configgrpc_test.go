@@ -32,6 +32,7 @@ func TestBasicGrpcSettings(t *testing.T) {
 		UseSecure:           false,
 		ServerNameOverride:  "",
 		KeepaliveParameters: nil,
+		KeyLogFile:          "",
 	})
 
 	assert.Nil(t, err)
@@ -47,6 +48,7 @@ func TestInvalidPemFile(t *testing.T) {
 		UseSecure:           false,
 		ServerNameOverride:  "",
 		KeepaliveParameters: nil,
+		KeyLogFile:          "",
 	})
 
 	assert.Equal(t, err, &os.PathError{Op: "open", Path: "/doesnt/exist", Err: unix.ENOENT})
@@ -61,6 +63,7 @@ func TestUseSecure(t *testing.T) {
 		UseSecure:           true,
 		ServerNameOverride:  "",
 		KeepaliveParameters: nil,
+		KeyLogFile:          "",
 	})
 
 	assert.Nil(t, err)

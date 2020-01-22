@@ -16,7 +16,11 @@
 package configgrpc
 
 import (
+	"crypto/tls"
 	"crypto/x509"
+	"fmt"
+	"io/ioutil"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -52,6 +56,10 @@ type GRPCSettings struct {
 	// The keepalive parameters for client gRPC. See grpc.WithKeepaliveParams
 	// (https://godoc.org/google.golang.org/grpc#WithKeepaliveParams).
 	KeepaliveParameters *KeepaliveConfig `mapstructure:"keepalive"`
+
+	// File to use for storing TLS master secrets is NNS key log format to
+	// allow external programs such as Wireshark to decrypt TLS connections.
+	KeyLogFile string `mapstructure:"key_log_file"`
 }
 
 // KeepaliveConfig exposes the keepalive.ClientParameters to be used by the exporter.
@@ -66,7 +74,7 @@ type KeepaliveConfig struct {
 func GrpcSettingsToDialOptions(settings GRPCSettings) ([]grpc.DialOption, error) {
 	opts := []grpc.DialOption{}
 	if settings.CertPemFile != "" {
-		creds, err := credentials.NewClientTLSFromFile(settings.CertPemFile, settings.ServerNameOverride)
+		creds, err := NewClientTLSFromFile(settings.CertPemFile, settings.ServerNameOverride, settings.KeyLogFile)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +84,10 @@ func GrpcSettingsToDialOptions(settings GRPCSettings) ([]grpc.DialOption, error)
 		if err != nil {
 			return nil, err
 		}
-		creds := credentials.NewClientTLSFromCert(certPool, settings.ServerNameOverride)
+		creds, err := NewClientTLSFromCert(certPool, settings.ServerNameOverride, settings.KeyLogFile)
+		if err != nil {
+			return nil, err
+		}
 		opts = append(opts, grpc.WithTransportCredentials(creds))
 	} else {
 		opts = append(opts, grpc.WithInsecure())
@@ -92,4 +103,38 @@ func GrpcSettingsToDialOptions(settings GRPCSettings) ([]grpc.DialOption, error)
 	}
 
 	return opts, nil
+}
+
+func NewClientTLSFromFile(certFile, serverNameOverride, keyLogFile string) (credentials.TransportCredentials, error) {
+	b, err := ioutil.ReadFile(certFile)
+	if err != nil {
+		return nil, err
+	}
+	cp := x509.NewCertPool()
+	if !cp.AppendCertsFromPEM(b) {
+		return nil, fmt.Errorf("credentials: failed to append certificates")
+	}
+	kl, err := NewKeyLogWriter(keyLogFile)
+	if err != nil {
+		return nil, err
+	}
+	return credentials.NewTLS(&tls.Config{ServerName: serverNameOverride, RootCAs: cp, KeyLogWriter: kl}), nil
+}
+
+func NewClientTLSFromCert(cp *x509.CertPool, serverNameOverride, keyLogFile string) (credentials.TransportCredentials, error) {
+	kl, err := NewKeyLogWriter(keyLogFile)
+	if err != nil {
+		return nil, err
+	}
+	return credentials.NewTLS(&tls.Config{ServerName: serverNameOverride, RootCAs: cp, KeyLogWriter: kl}), nil
+}
+
+func NewKeyLogWriter(keyLogFile string) (kl *os.File, err error) {
+	if keyLogFile != "" {
+		kl, err = os.OpenFile(keyLogFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
