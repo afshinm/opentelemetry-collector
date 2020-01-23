@@ -18,6 +18,7 @@ package defaults
 
 import (
 	"fmt"
+	nodeattributesprocessor "github.com/open-telemetry/opentelemetry-collector/processor/nodeattributeprocessor"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -66,6 +67,7 @@ func TestDefaultComponents(t *testing.T) {
 		"batch":                 &batchprocessor.Factory{},
 		"tail_sampling":         &tailsamplingprocessor.Factory{},
 		"probabilistic_sampler": &probabilisticsamplerprocessor.Factory{},
+		"nodeattributes":        &nodeattributesprocessor.Factory{},
 	}
 	expectedExporters := map[string]exporter.Factory{
 		"opencensus":         &opencensusexporter.Factory{},

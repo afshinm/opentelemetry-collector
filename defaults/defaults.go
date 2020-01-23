@@ -32,6 +32,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector/processor"
 	"github.com/open-telemetry/opentelemetry-collector/processor/attributesprocessor"
 	"github.com/open-telemetry/opentelemetry-collector/processor/batchprocessor"
+	nodeattributesprocessor "github.com/open-telemetry/opentelemetry-collector/processor/nodeattributeprocessor"
 	"github.com/open-telemetry/opentelemetry-collector/processor/queuedprocessor"
 	"github.com/open-telemetry/opentelemetry-collector/processor/samplingprocessor/probabilisticsamplerprocessor"
 	"github.com/open-telemetry/opentelemetry-collector/processor/samplingprocessor/tailsamplingprocessor"
@@ -89,6 +90,7 @@ func Components() (
 		&batchprocessor.Factory{},
 		&tailsamplingprocessor.Factory{},
 		&probabilisticsamplerprocessor.Factory{},
+		&nodeattributesprocessor.Factory{},
 	)
 	if err != nil {
 		errs = append(errs, err)

@@ -1,0 +1,21 @@
+processors:
+  nodeattributes:
+    attributes:
+      - key: some_key
+        value: the value
+      - key: some_other_key
+        value: '42'
+
+receivers:
+  examplereceiver:
+
+exporters:
+  exampleexporter:
+
+service:
+  pipelines:
+    traces:
+      receivers: [examplereceiver]
+      processors: [nodeattributes]
+      exporters: [exampleexporter]
+
